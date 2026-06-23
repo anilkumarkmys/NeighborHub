@@ -1,0 +1,291 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(uuid())
+  firstName         String
+  lastName          String
+  displayName       String
+  email             String    @unique
+  phone             String?
+  passwordHash      String
+  avatarUrl         String?
+  bio               String?
+  role              String    @default("resident")
+  isActive          Boolean   @default(true)
+  isSuspended       Boolean   @default(false)
+  isBanned          Boolean   @default(false)
+  suspendedUntil    DateTime?
+  suspensionReason  String?
+  banReason         String?
+  isAddressVerified Boolean   @default(false)
+  address           String?
+  lat               Float?
+  lng               Float?
+  pushToken         String?
+  neighborhoodId    String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  neighborhood       Neighborhood?        @relation(fields: [neighborhoodId], references: [id])
+  posts              Post[]               @relation("AuthorPosts")
+  replies            Reply[]
+  thanks             Thank[]
+  refreshTokens      RefreshToken[]
+  pendingVerification PendingVerification?
+  notifications      Notification[]
+  sentMessages       Message[]
+  conversations      Conversation[]       @relation("ConversationParticipants")
+  listings           Listing[]
+  attendingEvents    EventAttendee[]
+  organizedEvents    Event[]
+  reports            Report[]             @relation("Reporter")
+  resolvedReports    Report[]             @relation("Resolver")
+  adminLogs          AdminLog[]
+  createdVersions    AppVersion[]
+
+  @@index([email])
+  @@index([neighborhoodId])
+}
+
+model Neighborhood {
+  id        String   @id @default(uuid())
+  name      String
+  city      String
+  state     String
+  zip       String   @unique
+  isActive  Boolean  @default(true)
+  lat       Float?
+  lng       Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members User[]
+  posts   Post[]
+
+  @@index([zip])
+}
+
+model Post {
+  id             String   @id @default(uuid())
+  title          String
+  body           String
+  category       String
+  images         String[]
+  status         String   @default("active")
+  isPinned       Boolean  @default(false)
+  authorId       String
+  neighborhoodId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  author       User          @relation("AuthorPosts", fields: [authorId], references: [id])
+  neighborhood Neighborhood  @relation(fields: [neighborhoodId], references: [id])
+  replies      Reply[]
+  thanks       Thank[]
+  reports      Report[]
+
+  @@index([neighborhoodId, status, createdAt(sort: Desc)])
+  @@index([category])
+}
+
+model Reply {
+  id        String   @id @default(uuid())
+  body      String
+  postId    String
+  authorId  String
+  createdAt DateTime @default(now())
+
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id])
+
+  @@index([postId])
+}
+
+model Thank {
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+}
+
+model Event {
+  id             String    @id @default(uuid())
+  title          String
+  description    String
+  category       String
+  startDate      DateTime
+  endDate        DateTime
+  location       String?
+  address        String?
+  maxAttendees   Int?
+  coverImage     String?
+  isVirtual      Boolean   @default(false)
+  virtualLink    String?
+  organizerId    String
+  neighborhoodId String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organizer  User            @relation(fields: [organizerId], references: [id])
+  attendees  EventAttendee[]
+
+  @@index([neighborhoodId, startDate])
+}
+
+model EventAttendee {
+  userId    String
+  eventId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@id([userId, eventId])
+}
+
+model Listing {
+  id             String   @id @default(uuid())
+  title          String
+  description    String
+  price          Float    @default(0)
+  category       String
+  condition      String
+  images         String[]
+  isFree         Boolean  @default(false)
+  isNegotiable   Boolean  @default(false)
+  status         String   @default("active")
+  sellerId       String
+  neighborhoodId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  seller        User           @relation(fields: [sellerId], references: [id])
+  conversations Conversation[]
+
+  @@index([neighborhoodId, status])
+}
+
+model Conversation {
+  id        String   @id @default(uuid())
+  listingId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  listing      Listing?  @relation(fields: [listingId], references: [id])
+  participants User[]    @relation("ConversationParticipants")
+  messages     Message[]
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  body           String
+  imageUrl       String?
+  isRead         Boolean  @default(false)
+  senderId       String
+  conversationId String
+  createdAt      DateTime @default(now())
+
+  sender       User         @relation(fields: [senderId], references: [id])
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  type      String
+  title     String
+  body      String
+  data      Json?
+  isRead    Boolean  @default(false)
+  userId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead, createdAt(sort: Desc)])
+}
+
+model Report {
+  id           String    @id @default(uuid())
+  targetId     String
+  targetType   String
+  reason       String
+  description  String?
+  status       String    @default("pending")
+  adminNote    String?
+  reporterId   String
+  resolvedById String?
+  resolvedAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  reporter   User  @relation("Reporter", fields: [reporterId], references: [id])
+  resolvedBy User? @relation("Resolver", fields: [resolvedById], references: [id])
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([targetId, targetType])
+}
+
+model RefreshToken {
+  token     String   @id
+  userId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PendingVerification {
+  userId    String   @id
+  otp       String
+  expiresAt DateTime
+  address   String
+  lat       Float
+  lng       Float
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AppVersion {
+  id           String    @id @default(uuid())
+  version      String
+  appType      String
+  platform     String
+  status       String    @default("draft")
+  isForceUpdate Boolean  @default(false)
+  releaseNotes String?
+  downloadUrl  String?
+  releasedAt   DateTime?
+  createdById  String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  createdBy User @relation(fields: [createdById], references: [id])
+
+  @@unique([version, appType, platform])
+  @@index([appType, platform, status])
+}
+
+model AdminLog {
+  id        String   @id @default(uuid())
+  adminId   String
+  action    String
+  targetId  String?
+  details   Json
+  createdAt DateTime @default(now())
+
+  admin User @relation(fields: [adminId], references: [id])
+
+  @@index([adminId, createdAt(sort: Desc)])
+}

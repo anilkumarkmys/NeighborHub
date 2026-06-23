@@ -1,2 +1,46 @@
 node_modules
 screenshots
+
+# Build outputs
+dist
+build
+*.apk
+*.aab
+*.ipa
+artifacts/
+
+# Env files
+.env
+.env.local
+.env.production
+
+# Expo
+.expo
+.expo-shared
+
+# iOS
+ios/Pods
+ios/build
+
+# Android
+android/build
+android/.gradle
+android/app/build
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor
+.DS_Store
+.vscode
+.idea
+*.swp
+
+# Prisma
+backend/dist
+
+# Test coverage
+coverage

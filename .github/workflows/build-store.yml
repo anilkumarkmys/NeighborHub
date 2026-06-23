@@ -1,0 +1,73 @@
+name: Build & Submit to Stores
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'Which app to build'
+        required: true
+        type: choice
+        options:
+          - customer
+          - admin
+          - both
+      platform:
+        description: 'Target platform'
+        required: true
+        type: choice
+        options:
+          - android
+          - ios
+          - all
+
+jobs:
+  build-android:
+    name: Build Android (AAB)
+    runs-on: ubuntu-latest
+    if: inputs.platform == 'android' || inputs.platform == 'all'
+    strategy:
+      matrix:
+        app: ${{ inputs.app == 'both' && fromJSON('["customer","admin"]') || fromJSON(format('["{0}"]', inputs.app)) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Build AAB
+        working-directory: apps/${{ matrix.app }}
+        run: eas build --platform android --profile production --non-interactive
+      - name: Submit to Play Store
+        working-directory: apps/${{ matrix.app }}
+        run: eas submit --platform android --latest --non-interactive
+        env:
+          GOOGLE_SERVICE_ACCOUNT_KEY_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY_JSON }}
+
+  build-ios:
+    name: Build iOS (IPA)
+    runs-on: ubuntu-latest
+    if: (inputs.platform == 'ios' || inputs.platform == 'all') && inputs.app == 'customer'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Build IPA
+        working-directory: apps/customer
+        run: eas build --platform ios --profile production --non-interactive
+      - name: Submit to App Store
+        working-directory: apps/customer
+        run: eas submit --platform ios --latest --non-interactive
+        env:
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}

@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "NeighborHub Admin",
+    "slug": "neighborhub-admin",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./src/assets/images/icon.png",
+    "userInterfaceStyle": "automatic",
+    "scheme": "neighborhub-admin",
+    "splash": {
+      "image": "./src/assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1A202C"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.neighborhub.admin",
+      "buildNumber": "1"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/images/adaptive-icon.png",
+        "backgroundColor": "#1A202C"
+      },
+      "package": "com.neighborhub.admin",
+      "versionCode": 1,
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "plugins": [
+      "expo-font"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "YOUR_ADMIN_EAS_PROJECT_ID"
+      }
+    },
+    "owner": "YOUR_EXPO_ACCOUNT"
+  }
+}

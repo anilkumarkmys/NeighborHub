@@ -1,0 +1,68 @@
+name: Build Admin APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Build profile'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+          - development
+          - preview
+          - production-apk
+
+jobs:
+  build:
+    name: Build Admin APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Determine build profile
+        id: profile
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "profile=production-apk" >> $GITHUB_OUTPUT
+          else
+            echo "profile=${{ inputs.profile }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build APK
+        working-directory: apps/admin
+        run: eas build --platform android --profile ${{ steps.profile.outputs.profile }} --non-interactive --output ../../artifacts/admin.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-apk-${{ github.ref_name }}
+          path: artifacts/admin.apk
+          retention-days: 30
+
+      - name: Create GitHub Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/admin.apk
+          generate_release_notes: false
+          name: NeighborHub Admin ${{ github.ref_name }}

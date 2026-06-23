@@ -1,24 +1,27 @@
 {
-  "name": "cucumber-js-selenium-webdriver-example",
-  "version": "0.0.1",
-  "description": "A starter for acceptance testing using cucumber-js and webdriver-js.",
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:Matt-B/cucumber-js-selenium-webdriver-example.git"
-  },
+  "name": "nextdoor-clone",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/customer",
+    "apps/admin",
+    "packages/shared",
+    "backend"
+  ],
   "scripts": {
-    "test": "node_modules/grunt-cli/bin/grunt"
+    "customer": "cd apps/customer && npx expo start",
+    "admin": "cd apps/admin && npx expo start",
+    "backend": "cd backend && npm run dev",
+    "build:customer:android": "cd apps/customer && eas build --platform android --profile production",
+    "build:customer:ios": "cd apps/customer && eas build --platform ios --profile production",
+    "build:admin:android": "cd apps/admin && eas build --platform android --profile production",
+    "build:admin:ios": "cd apps/admin && eas build --platform ios --profile production",
+    "build:all:android": "npm run build:customer:android && npm run build:admin:android",
+    "version:patch": "node scripts/version-bump.js patch",
+    "version:minor": "node scripts/version-bump.js minor",
+    "version:major": "node scripts/version-bump.js major"
   },
   "devDependencies": {
-    "cucumber": "^0.10.2",
-    "selenium-webdriver": "^2.53.2",
-    "chai": "^3.5.0",
-    "grunt": "^1.0.1",
-    "grunt-cli": "^1.2.0",
-    "grunt-contrib-jshint": "^1.0.0",
-    "grunt-exec": "^0.4.7",
-    "grunt-env": "^0.4.4",
-    "sanitize-filename": "^1.6.0",
-    "appium": "^1.5.2"
+    "typescript": "^5.3.3"
   }
 }
